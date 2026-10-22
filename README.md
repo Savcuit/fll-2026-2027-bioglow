@@ -33,9 +33,9 @@ the robot (the `check()` guard inside every wait loop).
 | # | Function | Purpose |
 |---|---|---|
 | 0 | `run_0` | Calibration only |
-| 1 | `run_1` | Long mission run — drive, attachments, pivots |
-| 2 | `run_2` | Second mission run |
-| 3 | `run_3` | Short alignment move |
+| 1 | `run_1` | First Run — drive, attachments, pivots |
+| 2 | `run_2` | Second Run — drive, attachments, pivots  |
+| 3 | `run_3` |Third Run — drive, attachments, pivots  |
 
 ## Helper functions
 
