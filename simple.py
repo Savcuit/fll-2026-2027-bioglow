@@ -120,12 +120,18 @@ def stop():
         f.stop()
 
 
+class Aborted(Exception):
+    # A named error, used only for "the driver pressed a button". Having its own
+    # name means we can stop a run without hiding a real bug by accident.
+    pass
+
+
 def check():
     # The "panic button". If any button on the hub is down, this deliberately
-    # raises an error, which the program catches further down: the robot stops
-    # and you return to the program list. This is how CENTER can kill a run.
+    # raises Aborted, which the menu catches: the robot stops and you return to
+    # the program list. This is how CENTER can kill a run.
     if hub.buttons.pressed():
-        raise Exception()
+        raise Aborted()
 
 
 def wait_release():
@@ -134,6 +140,16 @@ def wait_release():
     while hub.buttons.pressed():
         wait(20)
     wait(50)
+
+
+def wait_press():
+    # Block until a button goes down, and return which one it was. The program
+    # sits here resting between presses instead of spinning in a busy loop.
+    p = ()
+    while not p:
+        p = hub.buttons.pressed()
+        wait(20)
+    return p
 
 
 # --------------------------------------------------- preparing to drive -----
@@ -408,56 +424,49 @@ sel = 1  # the program shown first: 1 = run_1
 #   CENTER -> first press runs the program, a second press stops the robot
 #             and brings you back to the number, ready to choose again
 
-def run_selected():
-    # Runs whatever number is on the display, then returns to the menu.
+def select_and_run():
+    # The menu. Read it as: show the number, wait for a press, let go of it,
+    # then act. The release BEFORE acting is what makes CENTER reliable: the
+    # press that starts a run is finished before the run begins, and a press
+    # during a run is finished before we return to the menu.
+    global sel
     wait_release()
-    try:
-        programs[sel]()
-        stop()
-    except Exception:
-        # CENTER (or any button) was pressed mid-run: stop everything and show
-        # the number again, so another program can be chosen immediately.
-        stop()
+    while True:
         hub.display.number(sel)
-    try:
-        hub.speaker.beep(1000, 200)
-    except Exception:
-        pass
-    wait_release()
+        p = wait_press()
+        wait_release()
 
+        if Button.LEFT in p:
+            # previous program, wrapping round to the last one
+            sel = len(programs) - 1 if sel == 0 else sel - 1
+
+        elif Button.RIGHT in p:
+            # next program, wrapping round to the first one
+            sel = 0 if sel == len(programs) - 1 else sel + 1
+
+        elif Button.CENTER in p:
+            # Blue light while the mission runs.
+            hub.light.on(Color.BLUE)
+            reset()
+            try:
+                programs[sel]()
+                stop()
+                try:
+                    hub.speaker.beep(1000, 200)
+                except Exception:
+                    pass
+            except Aborted:
+                # A button went down mid-run: stop and go back to the menu.
+                stop()
+            hub.light.on(Color.BLUE)
+            wait_release()
 
 stage(5)
 start()          # stop, wait, zero the gyroscope, light green
 stage(0)
-hub.display.number(sel)
 
 try:
-    # This loop runs for ever: show the number, react to buttons, repeat.
-    while True:
-        hub.display.number(sel)
-
-        pressed = hub.buttons.pressed()
-        if not pressed:
-            wait(20)        # nothing pressed, rest a moment and look again
-            continue
-
-        wait(200)           # small delay so one press is not read many times
-
-        if Button.LEFT in pressed:
-            # step down the list, wrapping around to the last program
-            sel = len(programs) - 1 if sel == 0 else sel - 1
-
-        elif Button.RIGHT in pressed:
-            # step up the list, wrapping around to the first program
-            sel = 0 if sel == len(programs) - 1 else sel + 1
-
-        elif Button.CENTER in pressed:
-            # First press: run. Second press during the run: the button check
-            # inside every movement raises, the run is caught and stopped, and
-            # the number comes back on screen.
-            run_selected()
-
-        wait_release()
+    select_and_run()
 
 except BaseException:
     # If anything unexpected goes wrong, do not vanish silently: blink 99 in

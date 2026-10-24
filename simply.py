@@ -58,14 +58,24 @@ def stop():
     if f:
         f.stop()
 
+class Aborted(Exception):
+    pass
+
 def check():
     if hub.buttons.pressed():
-        raise Exception()
+        raise Aborted()
 
 def wait_release():
     while hub.buttons.pressed():
         wait(20)
     wait(50)
+
+def wait_press():
+    p = ()
+    while not p:
+        p = hub.buttons.pressed()
+        wait(20)
+    return p
 
 def imu_ready():
     try:
@@ -260,47 +270,41 @@ programs = [run_0, run_1, run_2, run_3]
 
 sel = 1
 
-def run_selected():
+def select_and_run():
+    global sel
     wait_release()
-    try:
-        programs[sel]()
-        stop()
-    except Exception:
-        stop()
+    while True:
         hub.display.number(sel)
-    try:
-        hub.speaker.beep(1000, 200)
-    except Exception:
-        pass
-    wait_release()
+        p = wait_press()
+        wait_release()
+
+        if Button.LEFT in p:
+            sel = len(programs) - 1 if sel == 0 else sel - 1
+
+        elif Button.RIGHT in p:
+            sel = 0 if sel == len(programs) - 1 else sel + 1
+
+        elif Button.CENTER in p:
+            hub.light.on(Color.BLUE)
+            reset()
+            try:
+                programs[sel]()
+                stop()
+                try:
+                    hub.speaker.beep(1000, 200)
+                except Exception:
+                    pass
+            except Aborted:
+                stop()
+            hub.light.on(Color.BLUE)
+            wait_release()
 
 stage(5)
 start()
 stage(0)
-hub.display.number(sel)
 
 try:
-    while True:
-        hub.display.number(sel)
-
-        pressed = hub.buttons.pressed()
-        if not pressed:
-            wait(20)
-            continue
-
-        wait(200)
-
-        if Button.LEFT in pressed:
-            sel = len(programs) - 1 if sel == 0 else sel - 1
-
-        elif Button.RIGHT in pressed:
-            sel = 0 if sel == len(programs) - 1 else sel + 1
-
-        elif Button.CENTER in pressed:
-            run_selected()
-
-        wait_release()
-
+    select_and_run()
 except BaseException:
     while True:
         try:
