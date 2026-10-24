@@ -27,7 +27,10 @@ hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X)
 try:
     hub.system.set_stop_button(Button.BLUETOOTH)
 except Exception:
-    pass
+    try:
+        hub.system.set_stop_button(None)
+    except Exception:
+        pass
 
 wheel_diameter = 62.4
 axle_track = 120
