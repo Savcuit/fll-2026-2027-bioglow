@@ -21,6 +21,14 @@ from pybricks.tools import StopWatch, wait
 
 hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X)
 
+# The hub's factory stop button is the CENTER button, so pressing it to start a
+# program also stops the program. Move the emergency stop to the Bluetooth
+# button, exactly as the full framework does.
+try:
+    hub.system.set_stop_button(Button.BLUETOOTH)
+except Exception:
+    pass
+
 wheel_diameter = 62.4
 axle_track = 120
 pivot_ratio = (2 * axle_track) / wheel_diameter
