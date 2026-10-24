@@ -55,3 +55,17 @@ them to your robot before a run. `apply(speed)` sets straight speed,
 ## Status
 
 **v2.0** — the version used for the current season's missions.
+
+## Changelog
+
+### v2.0.1 — fixes
+- **Fatal:** `speed` was used in `apply()` but never defined, so every call without an
+  explicit speed (`fd(170)`, `bk(200)`, `fd(120)`, `fd(10)`…) raised `NameError` and killed
+  the run part-way. `speed = 900` is now defined.
+- **Speeds were fractions, not mm/s.** Values such as `fd(420, .3)` were passed straight to
+  `drive.settings(straight_speed=...)`, i.e. 0.3 mm/s. `apply()` now treats `s <= 1` as a
+  fraction of the default speed, so `.3` means 270 mm/s.
+- `gyro` was declared and then ignored (`use_gyro(True)` hard-coded twice). It is now used.
+- Buttons were still pressed when a program started, so `check()` aborted it immediately.
+  New `wait_release()` called before running a program.
+- Magic numbers `2000` / `790` moved to `accel` / `turn_rate`.

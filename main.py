@@ -11,12 +11,16 @@ r=Motor(Port.D,Direction.CLOCKWISE)
 a=Motor(Port.A,Direction.CLOCKWISE)
 f=Motor(Port.F,Direction.CLOCKWISE)
 
-drive=DriveBase(l,r,62.4,120)
-
-gyro=True
 wheel_diameter=62.4
 axle_track=120
+drive=DriveBase(l,r,wheel_diameter,axle_track)
+
+gyro=True
 pivot_ratio=(2*axle_track)/wheel_diameter
+
+speed=900
+turn_rate=790
+accel=2000
 
 def stop():
     drive.stop()
@@ -29,9 +33,13 @@ def check():
     if hub.buttons.pressed():
         raise Exception()
 
+def wait_release():
+    while hub.buttons.pressed():
+        wait(10)
+
 def reset():
     stop()
-    drive.use_gyro(True)
+    drive.use_gyro(gyro)
 
     wait(500)
 
@@ -42,7 +50,7 @@ def reset():
         wait(10)
 
     drive.reset()
-    drive.use_gyro(True)
+    drive.use_gyro(gyro)
 
 def start():
     hub.light.on(Color.RED)
@@ -56,11 +64,18 @@ def start():
     hub.light.on(Color.GREEN)
 
 def apply(s=None):
+    # s=None -> default speed; 0 < s <= 1 -> fraction of default speed; otherwise mm/s
+    if s is None:
+        v=speed
+    elif s<=1:
+        v=speed*s
+    else:
+        v=s
     drive.settings(
-        straight_speed=s or speed,
-        straight_acceleration=2000,
-        turn_rate=790,
-        turn_acceleration=2000
+        straight_speed=v,
+        straight_acceleration=accel,
+        turn_rate=turn_rate,
+        turn_acceleration=accel
     )
 
 def wait_drive():
@@ -77,7 +92,6 @@ def fd(x,s=None):
     )
     wait_drive()
 
-
 def bk(x,s=None):
     apply(s)
     drive.straight(
@@ -93,7 +107,6 @@ def right(x):
         then=Stop.HOLD,
         wait=True
     )
-
 
 def left(x):
     drive.turn(
@@ -114,9 +127,12 @@ def calibrate():
     wait(2000)
 
     drive.reset()
-    drive.use_gyro(True)
+    drive.use_gyro(gyro)
+
+    wait_release()
 
     hub.light.on(Color.GREEN)
+
 def a_turn(x,s=500):
     a.run_angle(s,x,then=Stop.HOLD)
 
@@ -159,6 +175,7 @@ def pivot_left_back(x):
 
 def run_0():
     calibrate()
+
 def run_1():
     fd(420,.3)
     bk(200,.6)
@@ -220,10 +237,13 @@ def choose():
             if Button.LEFT in p:
                 sel-=1
                 if sel<0: sel=len(programs)-1
+                wait_release()
             elif Button.RIGHT in p:
                 sel+=1
                 if sel>=len(programs): sel=0
+                wait_release()
             elif Button.CENTER in p:
+                wait_release()
                 programs[sel]()
                 stop()
 
