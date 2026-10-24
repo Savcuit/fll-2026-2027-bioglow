@@ -173,12 +173,27 @@ def bk(x, s=None):
     wait_drive()
 
 
+def wait_motor(m):
+    # Poll a motor so the abort check still runs while it moves.
+    t = StopWatch()
+    while not m.done():
+        check()
+        if t.time() > 30000:
+            m.stop()
+            return
+        wait(5)
+
+
 def right(x):
-    drive.turn(abs(x), then=Stop.HOLD, wait=True)
+    apply()
+    drive.turn(abs(x), then=Stop.HOLD, wait=False)
+    wait_drive()
 
 
 def left(x):
-    drive.turn(-abs(x), then=Stop.HOLD, wait=True)
+    apply()
+    drive.turn(-abs(x), then=Stop.HOLD, wait=False)
+    wait_drive()
 
 
 def calibrate():
@@ -202,12 +217,14 @@ def calibrate():
 
 def a_turn(x, s=500):
     if a:
-        a.run_angle(s, x, then=Stop.HOLD)
+        a.run_angle(s, x, then=Stop.HOLD, wait=False)
+        wait_motor(a)
 
 
 def f_turn(x, s=500):
     if f:
-        f.run_angle(s, x, then=Stop.HOLD)
+        f.run_angle(s, x, then=Stop.HOLD, wait=False)
+        wait_motor(f)
 
 
 def pivot(angle, moving, held, sign):
@@ -317,7 +334,10 @@ try:
                 programs[sel]()
                 stop()
             except Exception:
+                # Any button - CENTER included - kills the run mid-motion,
+                # because every move now polls check() instead of blocking.
                 stop()
+                hub.display.number(sel)
             try:
                 hub.speaker.beep(1000, 200)
             except Exception:
