@@ -99,3 +99,14 @@ them to your robot before a run. `apply(speed)` sets straight speed,
 
 The two files are functionally identical: their compiled syntax trees were compared and match exactly.
 Flash whichever you prefer; behaviour, controls and results are the same.
+
+### v2.2 — condensed main.py (607 -> 265 lines)
+Nothing that runs has changed. All 45 remaining functions are AST-identical to v2.1, and every
+one of the 78 top-level statements is unchanged; only formatting was joined up and unused
+helpers were removed:
+
+`face`, `shortest`, `pivot*` (5), `arc*` (5), `tool_time/tool_to/tool_run/tool_stop/tool_reset/tool_angle`,
+`a_time/a_to/a_run/a_stop/a_reset/a_angle`, `f_time/f_to/f_run/f_stop/f_reset/f_angle`, `wait_s`, `run_5`.
+
+Restore any of them from the tag `v2.1` if a run needs them. The five mission runs, calibration,
+menu, abort handling and every guard are untouched.
