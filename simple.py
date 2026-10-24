@@ -402,6 +402,34 @@ programs = [run_0, run_1, run_2, run_3]
 sel = 1  # the program shown first: 1 = run_1
 
 # ------------------------------------------------------------ the menu -------
+# HOW TO USE IT
+#   LEFT  alone  -> previous program
+#   RIGHT alone  -> next program
+#   LEFT + RIGHT together -> RUN the program shown
+#   CENTER       -> also runs it, on firmware that lets us own that button
+#
+# Why the two-button start? On many hubs the CENTER button is wired by the
+# firmware as "stop", and no setting can take it back. Starting with LEFT+RIGHT
+# means the menu works on every firmware, whether or not CENTER is available.
+
+def run_selected():
+    # Runs whatever number is on the display, then returns to the menu.
+    wait_release()
+    try:
+        programs[sel]()
+        stop()
+    except Exception:
+        # A button was pressed mid-run: stop everything and show the number
+        # again, so another program can be chosen immediately.
+        stop()
+        hub.display.number(sel)
+    try:
+        hub.speaker.beep(1000, 200)
+    except Exception:
+        pass
+    wait_release()
+
+
 stage(5)
 start()          # stop, wait, zero the gyroscope, light green
 stage(0)
@@ -419,32 +447,23 @@ try:
 
         wait(200)           # small delay so one press is not read many times
 
-        if Button.LEFT in pressed:
+        left_down = Button.LEFT in pressed
+        right_down = Button.RIGHT in pressed
+
+        if left_down and right_down:
+            run_selected()
+
+        elif left_down:
             # step down the list, wrapping around to the last program
             sel = len(programs) - 1 if sel == 0 else sel - 1
 
-        elif Button.RIGHT in pressed:
+        elif right_down:
             # step up the list, wrapping around to the first program
             sel = 0 if sel == len(programs) - 1 else sel + 1
 
         elif Button.CENTER in pressed:
-            # Run the chosen program. wait_release() makes sure the CENTER
-            # press itself is over before the run begins, otherwise the run
-            # would stop instantly.
-            wait_release()
-            try:
-                programs[sel]()
-                stop()
-            except Exception:
-                # Stopped by a button press during the run: halt everything and
-                # put the number back on the screen, ready for the next choice.
-                stop()
-                hub.display.number(sel)
-
-            try:
-                hub.speaker.beep(1000, 200)   # short confirmation beep
-            except Exception:
-                pass
+            # kept for hubs whose firmware lets CENTER be used freely
+            run_selected()
 
         wait_release()
 

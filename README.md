@@ -79,3 +79,17 @@ them to your robot before a run. `apply(speed)` sets straight speed,
   It is retained in git history only (commit `d856305`).
 - Run `run_0` once after flashing: it measures gyro noise and motor deadband, and adapts the
   tolerances and top speed for that session.
+
+## Controls (simple.py)
+
+| Action | Result |
+|---|---|
+| **LEFT** | previous program |
+| **RIGHT** | next program |
+| **LEFT + RIGHT together** | **run the program shown** |
+| **CENTER** | also runs it, if the firmware allows CENTER to be used |
+| **any button during a run** | stops the robot, returns to the menu |
+
+`CENTER` alone is avoided on purpose: on many hubs the firmware hard-wires it as the
+stop button, so using it to start a run simply kills the script. The two-button start works
+on every firmware.
