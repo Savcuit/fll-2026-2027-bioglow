@@ -89,3 +89,13 @@ them to your robot before a run. `apply(speed)` sets straight speed,
 | **CENTER** | first press runs the shown program |
 | **CENTER again while running** | stops the robot, returns to the number |
 | **any other button during a run** | also stops the robot |
+
+## Two versions of the small runner
+
+| File | Purpose |
+|---|---|
+| `simple.py` | the same code, **heavily commented** in plain English for a non-programmer |
+| `simply.py` | the same code **with the comments stripped** - shorter to read and to copy |
+
+The two files are functionally identical: their compiled syntax trees were compared and match exactly.
+Flash whichever you prefer; behaviour, controls and results are the same.
