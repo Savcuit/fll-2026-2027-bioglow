@@ -403,14 +403,10 @@ sel = 1  # the program shown first: 1 = run_1
 
 # ------------------------------------------------------------ the menu -------
 # HOW TO USE IT
-#   LEFT  alone  -> previous program
-#   RIGHT alone  -> next program
-#   LEFT + RIGHT together -> RUN the program shown
-#   CENTER       -> also runs it, on firmware that lets us own that button
-#
-# Why the two-button start? On many hubs the CENTER button is wired by the
-# firmware as "stop", and no setting can take it back. Starting with LEFT+RIGHT
-# means the menu works on every firmware, whether or not CENTER is available.
+#   LEFT   -> previous program
+#   RIGHT  -> next program
+#   CENTER -> first press runs the program, a second press stops the robot
+#             and brings you back to the number, ready to choose again
 
 def run_selected():
     # Runs whatever number is on the display, then returns to the menu.
@@ -419,8 +415,8 @@ def run_selected():
         programs[sel]()
         stop()
     except Exception:
-        # A button was pressed mid-run: stop everything and show the number
-        # again, so another program can be chosen immediately.
+        # CENTER (or any button) was pressed mid-run: stop everything and show
+        # the number again, so another program can be chosen immediately.
         stop()
         hub.display.number(sel)
     try:
@@ -447,22 +443,18 @@ try:
 
         wait(200)           # small delay so one press is not read many times
 
-        left_down = Button.LEFT in pressed
-        right_down = Button.RIGHT in pressed
-
-        if left_down and right_down:
-            run_selected()
-
-        elif left_down:
+        if Button.LEFT in pressed:
             # step down the list, wrapping around to the last program
             sel = len(programs) - 1 if sel == 0 else sel - 1
 
-        elif right_down:
+        elif Button.RIGHT in pressed:
             # step up the list, wrapping around to the first program
             sel = 0 if sel == len(programs) - 1 else sel + 1
 
         elif Button.CENTER in pressed:
-            # kept for hubs whose firmware lets CENTER be used freely
+            # First press: run. Second press during the run: the button check
+            # inside every movement raises, the run is caught and stopped, and
+            # the number comes back on screen.
             run_selected()
 
         wait_release()
