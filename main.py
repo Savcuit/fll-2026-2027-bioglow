@@ -37,20 +37,32 @@ def wait_release():
     while hub.buttons.pressed():
         wait(10)
 
+def imu_ready():
+    # Older firmware has no hub.imu.ready(); fall back to a fixed settle time.
+    try:
+        return hub.imu.ready()
+    except Exception:
+        return True
+
 def reset():
     stop()
-    drive.use_gyro(gyro)
 
     wait(500)
 
-    hub.imu.reset_heading(0)
-
     t=StopWatch()
-    while not hub.imu.ready() and t.time()<5000:
+    while not imu_ready() and t.time()<3000:
         wait(10)
 
-    drive.reset()
-    drive.use_gyro(gyro)
+    try:
+        hub.imu.reset_heading(0)
+    except Exception:
+        pass
+
+    try:
+        drive.reset()
+        drive.use_gyro(gyro)
+    except Exception:
+        pass
 
 def start():
     hub.light.on(Color.RED)
@@ -122,12 +134,18 @@ def calibrate():
 
     wait(1000)
 
-    hub.imu.reset_heading(0)
+    try:
+        hub.imu.reset_heading(0)
+    except Exception:
+        pass
 
     wait(2000)
 
-    drive.reset()
-    drive.use_gyro(gyro)
+    try:
+        drive.reset()
+        drive.use_gyro(gyro)
+    except Exception:
+        pass
 
     wait_release()
 
@@ -246,6 +264,8 @@ def choose():
                 wait_release()
                 programs[sel]()
                 stop()
+
+hub.display.number(sel)
 
 start()
 
