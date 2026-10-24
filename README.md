@@ -69,3 +69,13 @@ them to your robot before a run. `apply(speed)` sets straight speed,
 - Buttons were still pressed when a program started, so `check()` aborted it immediately.
   New `wait_release()` called before running a program.
 - Magic numbers `2000` / `790` moved to `accel` / `turn_rate`.
+
+### v2.1 — restored working framework
+- `main.py` is now the **full framework** (607 lines) that actually runs on the hub:
+  fraction-based speed scaling, owed-distance/owed-heading tracking, fine angle and fine
+  distance correction, gyro-noise / motor-deadband / top-speed calibration, pivots, arcs,
+  tool (A/F) helpers, abort on any button, and a program map selected on the hub display.
+- The earlier 236-line "v2.0" was a simplified reconstruction and is **not** the shipped code.
+  It is retained in git history only (commit `d856305`).
+- Run `run_0` once after flashing: it measures gyro noise and motor deadband, and adapts the
+  tolerances and top speed for that session.
