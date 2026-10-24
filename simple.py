@@ -21,9 +21,22 @@ from pybricks.tools import StopWatch, wait
 
 hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X)
 
+
+def stage(n):
+    # Visible progress marker: if the program dies, the last number stays on
+    # the display and tells us exactly which step failed.
+    try:
+        hub.display.number(n)
+    except Exception:
+        pass
+
+
+stage(1)
+
 # The hub's factory stop button is the CENTER button, so pressing it to start a
 # program also stops the program. Move the emergency stop to the Bluetooth
 # button, exactly as the full framework does.
+stage(2)
 try:
     hub.system.set_stop_button(Button.BLUETOOTH)
 except Exception:
@@ -41,10 +54,12 @@ speed = 900          # default straight speed, mm/s
 turn_rate = 790
 accel = 2000
 
+stage(3)
 left_motor = Motor(Port.B, Direction.COUNTERCLOCKWISE)
 right_motor = Motor(Port.D, Direction.CLOCKWISE)
 drive = DriveBase(left_motor, right_motor, wheel_diameter, axle_track)
 
+stage(4)
 # Tools are optional: a missing or loose motor must not abort the program.
 try:
     a = Motor(Port.A, Direction.CLOCKWISE)
@@ -278,8 +293,10 @@ def run_3():
 programs = [run_0, run_1, run_2, run_3]
 sel = 1
 
-hub.display.number(sel)
+stage(5)
 start()
+stage(0)
+hub.display.number(sel)
 
 try:
     while True:
@@ -306,6 +323,17 @@ try:
             except Exception:
                 pass
         wait_release()
+except BaseException:
+    # Never die silently: blink 99 so we can see it crashed, and why it matters.
+    while True:
+        try:
+            hub.display.number(99)
+            hub.light.on(Color.RED)
+            wait(300)
+            hub.light.off()
+            wait(300)
+        except Exception:
+            pass
 finally:
     stop()
     hub.light.off()
