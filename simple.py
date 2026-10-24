@@ -415,7 +415,9 @@ def run_3():
 # The choices in the order they appear when you press LEFT / RIGHT.
 programs = [run_0, run_1, run_2, run_3]
 
-sel = 1  # the program shown first: 1 = run_1
+first_run = 1
+
+sel = first_run  # the program shown first: 1 = run_1
 
 # ------------------------------------------------------------ the menu -------
 # HOW TO USE IT
@@ -445,21 +447,32 @@ def select_and_run():
             sel = 0 if sel == len(programs) - 1 else sel + 1
 
         elif Button.CENTER in p:
-            # Blue light while the mission runs.
+            # Blue light while the mission runs, and a fresh zero on the gyro
+            # so every run starts from a known heading.
             hub.light.on(Color.BLUE)
             reset()
+
+            ran = True   # we need to know afterwards whether it finished or was stopped
             try:
                 programs[sel]()
                 stop()
                 try:
-                    hub.speaker.beep(1000, 200)
+                    hub.speaker.beep(1000, 200)   # short confirmation beep
                 except Exception:
                     pass
             except Aborted:
-                # A button went down mid-run: stop and go back to the menu.
+                # A button went down mid-run: stop everything. ran=False means
+                # "do not advance to the next program, the run did not finish".
                 stop()
+                ran = False
+
             hub.light.on(Color.BLUE)
             wait_release()
+
+            # Like the full framework: after a completed run, move on to the
+            # next program automatically, wrapping back to the first one.
+            if ran:
+                sel = first_run if sel >= len(programs) - 1 else sel + 1
 
 stage(5)
 start()          # stop, wait, zero the gyroscope, light green

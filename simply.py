@@ -268,7 +268,9 @@ def run_3():
 
 programs = [run_0, run_1, run_2, run_3]
 
-sel = 1
+first_run = 1
+
+sel = first_run
 
 def select_and_run():
     global sel
@@ -287,6 +289,7 @@ def select_and_run():
         elif Button.CENTER in p:
             hub.light.on(Color.BLUE)
             reset()
+            ran = True
             try:
                 programs[sel]()
                 stop()
@@ -296,8 +299,11 @@ def select_and_run():
                     pass
             except Aborted:
                 stop()
+                ran = False
             hub.light.on(Color.BLUE)
             wait_release()
+            if ran:
+                sel = first_run if sel >= len(programs) - 1 else sel + 1
 
 stage(5)
 start()
