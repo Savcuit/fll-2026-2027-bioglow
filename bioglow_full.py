@@ -2,20 +2,7 @@ from pybricks.hubs import PrimeHub; from pybricks.pupdevices import Motor; from 
 axle_track = 120.0; heading_correction = 1.0; max_straight_speed = 900.0; max_turn_rate = 790.0; max_motor_speed = 1000.0; max_straight_accel = 2000.0; max_turn_accel = 2000.0; max_motor_accel = 5000.0; default_straight_speed = 0.92; default_straight_accel = 0.3; default_turn_rate = 0.076; default_turn_accel = 0.15; default_pivot_speed = 0.5; default_pivot_accel = 0.24
 tool_default_speed = 0.5; tool_default_accel = 0.4; fine_tune_angle = False; fine_angle_tolerance = 0.4; fine_angle_kp = 7.0; fine_angle_ki = 1.2; fine_angle_kd = 0.9; fine_angle_i_limit = 30.0; fine_angle_min_speed = 14.0; fine_angle_max_speed = 0.18; fine_hold_checks = 4; fine_timeout_ms = 1600; fine_tune_distance = True; fine_dist_tolerance = 1.2
 fine_dist_min_move = 1.0; fine_dist_speed = 0.045; fine_dist_passes = 2; pivot_kp = 3.0; pivot_ki = 0.4; pivot_kd = 0.6; pivot_i_limit = 40.0; pivot_min_speed = 22.0; pivot_tolerance = 0.4; pivot_hold_checks = 4; pivot_timeout_ms = 12000; pivot_trim_timeout = 3000; straight_segment_mm = 1000000.0; command_deadband = 1.0
-move_timeout_ms = 30000; gyro_enabled = True; imu_settle_ms = 3500; control_loop_ms = 2; motor_stall_speed = 8; motor_stall_time = 200; low_voltage_mv = 7200; hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X)
-try:
-    hub.speaker.volume(80)
-except: pass
-try:
-    hub.system.set_stop_button(Button.BLUETOOTH)
-except: pass
-left_motor = Motor(left_motor_port, left_motor_direction); right_motor = Motor(right_motor_port, right_motor_direction)
-try:
-    tool_a = Motor(tool_a_port, tool_a_direction)
-except: tool_a = None
-try:
-    tool_f = Motor(tool_f_port, tool_f_direction)
-except: tool_f = None
+move_timeout_ms = 30000; gyro_enabled = True; imu_settle_ms = 3500; control_loop_ms = 2; motor_stall_speed = 8; motor_stall_time = 200; low_voltage_mv = 7200; hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X); hub.speaker.volume(80); hub.system.set_stop_button(Button.BLUETOOTH); left_motor = Motor(left_motor_port, left_motor_direction); right_motor = Motor(right_motor_port, right_motor_direction); tool_a = Motor(tool_a_port, tool_a_direction); tool_f = Motor(tool_f_port, tool_f_direction)
 
 def clamp(v, l, h):
     return l if v < l else h if v > h else v
@@ -34,10 +21,7 @@ def abort_check():
     if hub.buttons.pressed():
         raise Aborted()
 
-def end_beep():
-    try:
-        hub.speaker.beep(1000, 300)
-    except: pass
+def end_beep(): hub.speaker.beep(1000, 300)
 
 def shortest(a):
     while a > 180: a -= 360
@@ -50,10 +34,7 @@ def heading():
 def battery_ok():
     return hub.battery.voltage() >= low_voltage_mv
 
-def set_stall(m):
-    try:
-        m.control.stall_tolerances(speed=motor_stall_speed, time=motor_stall_time)
-    except: pass
+def set_stall(m): m.control.stall_tolerances(speed=motor_stall_speed, time=motor_stall_time)
 
 def prepare():
     for m in (left_motor, right_motor, tool_a, tool_f):
@@ -67,17 +48,11 @@ def relax():
 def shutdown():
     relax(); hub.light.off()
 
-def apply_heading():
-    try:
-        hub.imu.settings(heading_correction=heading_correction)
-    except: pass
+def apply_heading(): hub.imu.settings(heading_correction=heading_correction)
 
 def startup():
-    global owed_mm, owed_deg; hub.light.on(Color.RED); relax(); apply_heading(); wait(imu_settle_ms)
-    try:
-        s = StopWatch()
-        while not hub.imu.ready() and s.time() < 8000: wait(control_loop_ms)
-    except: pass
+    global owed_mm, owed_deg; hub.light.on(Color.RED); relax(); apply_heading(); wait(imu_settle_ms); s = StopWatch()
+    while not hub.imu.ready() and s.time() < 8000: wait(control_loop_ms)
     hub.imu.reset_heading(0); drive.reset(); drive.use_gyro(gyro_enabled); owed_mm = 0; owed_deg = 0; restore(); prepare(); hub.light.on(Color.GREEN if battery_ok() else Color.RED)
 
 def reset():
@@ -151,6 +126,15 @@ def left(angle, *a, **k): spin(-abs(float(angle)), *a, **k)
 def face(target, *a, **k):
     global owed_deg; owed_deg = heading() + shortest(float(target) - heading()); spin(0, *a, **k)
 
+def move_and_arms(distance_mm, a_deg=0, f_deg=0, speed=None, accel=None, aspeed=500, fspeed=500):
+    global owed_mm; fine_angle(owed_deg); take_drive(); apply(speed, accel)
+    if a and a_deg: a.run_angle(aspeed, a_deg, then=Stop.HOLD, wait=False)
+    if f and f_deg: f.run_angle(fspeed, f_deg, then=Stop.HOLD, wait=False)
+    drive.straight(float(distance_mm), then=Stop.HOLD, wait=False)
+    while not drive.done() or (a and (not a.done())) or (f and (not f.done())):
+        abort_check(); wait(control_loop_ms)
+    owed_mm = drive.distance(); restore(); fine_angle(owed_deg)
+
 def pivot(angle, moving, held, sign, speed, accel=None):
     global owed_deg; owed_deg += angle; take_drive(); held.hold(); moving.control.limits(acceleration=frac(accel, max_motor_accel, default_pivot_accel)); moving.run_angle(frac(speed, max_motor_speed, default_pivot_speed), angle * wheel_deg_per_pivot_deg * sign, then=Stop.HOLD, wait=False)
     while not moving.done():
@@ -188,10 +172,7 @@ def tool(port):
 def tool_speed(s):
     return clamp(frac(s, max_motor_speed, tool_default_speed), 10, max_motor_speed)
 
-def tool_accel(m, a):
-    try:
-        m.control.limits(acceleration=frac(a, max_motor_accel, tool_default_accel))
-    except: pass
+def tool_accel(m, a): m.control.limits(acceleration=frac(a, max_motor_accel, tool_default_accel))
 
 def tool_turn(port, angle, speed=None, accel=None, hold=True, block=True):
     m = tool(port)
