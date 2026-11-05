@@ -13,8 +13,8 @@ Mission code for the FIRST LEGO League **BIOGLOW** season, written in Python for
 | **`bioglow_full_explained.py`** | The full framework above, with a plain-English explanation above every function and a guide at the top. Behaviour identical. | 897 |
 | **`bioglow_full.py`** | The complete framework: every helper kept (pivots, arcs, all tool calls), the redundant try/except guards stripped, plus a new `move_and_arms()` that drives and moves both arms at once. No comments. | 332 |
 | **`bioglow_original.py`** | The original 607-line `main.py` exactly as it was first written — every helper, every guard, before any condensing. Kept for reference and for comparing behaviour. | 607 |
-| **`bioglow_v3.py`** | The current robot, revised from the working state: per-command acceleration, gyro heading correction after every move, and the empty `run_5` fixed. No comments. | 331 |
-| **`bioglow_v3_explained.py`** | The same program line for line, with an explanation above every function. Verified identical by syntax tree. | 470 |
+| **`bioglow_v3.py`** | The current robot, revised from the working state: per-command acceleration, gyro heading correction after every move, and the empty `run_5` fixed. No comments. | 421 |
+| **`bioglow_v3_explained.py`** | The same program line for line, with an explanation above every function. Verified identical by syntax tree. | 491 |
 
 `bioglow_original.py` is the untouched starting point; the competition file is a condensed
 version of it with identical behaviour in every function that survived.
