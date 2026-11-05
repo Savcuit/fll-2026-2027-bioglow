@@ -120,7 +120,9 @@ def wrap180(value):
     return value
 
 
-def speed_of(s):
+def speed_of(s, speed=None):
+    if speed is not None:
+        s = speed
     if s is None:
         return BASE_SPEED
     if s <= 1:
@@ -128,7 +130,9 @@ def speed_of(s):
     return s
 
 
-def accel_of(a):
+def accel_of(a, accel=None):
+    if accel is not None:
+        a = accel
     if a is None:
         return BASE_ACCEL
     if a <= 1:
@@ -136,9 +140,9 @@ def accel_of(a):
     return a
 
 
-def tune(s, a):
-    speed = speed_of(s)
-    accel = accel_of(a)
+def tune(s, a, speed=None, accel=None):
+    speed = speed_of(s, speed)
+    accel = accel_of(a, accel)
     drive.settings(speed, accel, TURN_RATE, accel)
 
 
@@ -198,32 +202,32 @@ def hold_heading(target):
         pass
 
 
-def fd(x, s=None, a=None):
+def fd(x, s=None, a=None, speed=None, accel=None):
     target = heading_now()
-    tune(s, a)
+    tune(s, a, speed, accel)
     drive.straight(abs(x), then=Stop.HOLD, wait=False)
     wait_drive()
     hold_heading(target)
 
 
-def bk(x, s=None, a=None):
+def bk(x, s=None, a=None, speed=None, accel=None):
     target = heading_now()
-    tune(s, a)
+    tune(s, a, speed, accel)
     drive.straight(-abs(x), then=Stop.HOLD, wait=False)
     wait_drive()
     hold_heading(target)
 
 
-def right(x, s=None, a=None):
-    tune(s, a)
+def right(x, s=None, a=None, speed=None, accel=None):
+    tune(s, a, speed, accel)
     target = wrap180(heading_now() + x)
     drive.turn(abs(x), then=Stop.HOLD, wait=False)
     wait_drive()
     hold_heading(target)
 
 
-def left(x, s=None, a=None):
-    tune(s, a)
+def left(x, s=None, a=None, speed=None, accel=None):
+    tune(s, a, speed, accel)
     target = wrap180(heading_now() - x)
     drive.turn(-abs(x), then=Stop.HOLD, wait=False)
     wait_drive()

@@ -371,7 +371,8 @@ def pivot_left_back(x):
 #
 #  Each of fd, bk, left and right accepts two optional arguments:
 #
-#    fd(200, .4, .2)   200 mm
+#    fd(200, .4, .2)   200 mm, 40% speed, 20% acceleration
+#    fd(200, speed=.4, accel=.2)   the same thing in the old keyword style
 #                      .4  = speed, 40% of full (900 mm/s)
 #                      .2  = acceleration, 20% of full (2000 mm/s²)
 #
