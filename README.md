@@ -13,6 +13,8 @@ Mission code for the FIRST LEGO League **BIOGLOW** season, written in Python for
 | **`bioglow_full_explained.py`** | The full framework above, with a plain-English explanation above every function and a guide at the top. Behaviour identical. | 897 |
 | **`bioglow_full.py`** | The complete framework: every helper kept (pivots, arcs, all tool calls), the redundant try/except guards stripped, plus a new `move_and_arms()` that drives and moves both arms at once. No comments. | 332 |
 | **`bioglow_original.py`** | The original 607-line `main.py` exactly as it was first written — every helper, every guard, before any condensing. Kept for reference and for comparing behaviour. | 607 |
+| **`bioglow_v3.py`** | The current robot, revised from the working state: per-command acceleration, gyro heading correction after every move, and the empty `run_5` fixed. No comments. | 331 |
+| **`bioglow_v3_explained.py`** | The same program line for line, with an explanation above every function. Verified identical by syntax tree. | 470 |
 
 `bioglow_original.py` is the untouched starting point; the competition file is a condensed
 version of it with identical behaviour in every function that survived.
@@ -20,6 +22,18 @@ version of it with identical behaviour in every function that survived.
 All of them run on the same hardware. `bioglow_simple.py` and
 `bioglow_simple_explained.py` were compared by compiled syntax tree and are identical
 in behaviour — they differ only in commentary.
+
+## A note on the current revision
+
+`bioglow_v3.py` and `bioglow_v3_explained.py` are the successors to everything above. Two changes matter:
+
+- **Per-command acceleration.** `fd(200, .2, .1)` — distance, speed, acceleration. A value below 1 is a
+  share of full (so `.1` is ten percent of 2000 mm/s²); above 1 it is literal.
+- **Gyro correction after every move.** Each straight records the heading it started on and nudges back
+  if the robot drifted more than 0.6°, which is what keeps long runs from walking off line.
+
+The version sent to me had `def run_5():` with nothing under it, which is a syntax error — Python refuses
+to load the whole file, so no program could run. That is fixed.
 
 ## Hardware
 
