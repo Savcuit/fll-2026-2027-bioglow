@@ -58,13 +58,15 @@ def blank():
 
 stage(1)
 
-# The factory stop button is CENTER, which we need for "run".
-# Move it to BLUETOOTH so CENTER belongs to us again.
+# The factory stop button is CENTER and we want CENTER for ourselves:
+# a first press runs the chosen program, a second press stops it.
+# So the firmware stop is switched off entirely, and our own check()
+# below watches CENTER during every move instead.
 try:
-    hub.system.set_stop_button(Button.BLUETOOTH)
+    hub.system.set_stop_button(None)
 except Exception:
     try:
-        hub.system.set_stop_button(None)
+        hub.system.set_stop_button(Button.BLUETOOTH)
     except Exception:
         pass
 
@@ -105,8 +107,11 @@ class Aborted(Exception):
 
 
 def check():
-    """Every waiting loop calls this, so any button press stops the robot."""
-    if hub.buttons.pressed():
+    """
+    Every waiting loop calls this. Pressing CENTER while a program runs stops
+    the robot and returns to the menu; other buttons are ignored.
+    """
+    if Button.CENTER in hub.buttons.pressed():
         raise Aborted()
 
 
@@ -242,7 +247,8 @@ def hold_heading(target):
     try:
         error = wrap180(heading_now() - target)
         if abs(error) > HEADING_TOL:
-            drive.turn(-error, then=Stop.HOLD, wait=True)
+            drive.turn(-error, then=Stop.HOLD, wait=False)
+            wait_drive()
     except Exception:
         pass
 
@@ -324,7 +330,8 @@ def pivot(angle, moving, held, sign):
     which way is forward.
     """
     held.hold()
-    moving.run_angle(500, angle * PIVOT_RATIO * sign, then=Stop.HOLD, wait=True)
+    moving.run_angle(500, angle * PIVOT_RATIO * sign, then=Stop.HOLD, wait=False)
+    wait_motor(moving)
     try:
         hub.imu.reset_heading(heading_now())
     except Exception:

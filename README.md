@@ -32,6 +32,10 @@ in behaviour — they differ only in commentary.
 - **Gyro correction after every move.** Each straight records the heading it started on and nudges back
   if the robot drifted more than 0.6°, which is what keeps long runs from walking off line.
 
+**CENTER belongs to the program.** The firmware's own stop button is switched off, so a first press runs
+the chosen run and a second press stops it — no firmware screen, no bounce back to the hub menu. Every
+waiting loop watches CENTER, so the stop lands within milliseconds; other buttons are ignored.
+
 The version sent to me had `def run_5():` with nothing under it, which is a syntax error — Python refuses
 to load the whole file, so no program could run. That is fixed.
 
@@ -54,7 +58,7 @@ to load the whole file, so no program could run. That is fixed.
 | **LEFT** | previous program |
 | **RIGHT** | next program |
 | **CENTER** | runs the program shown |
-| **CENTER again while running** | stops the robot, returns to the number |
+| **CENTER again while running** | stops the robot and returns to the menu |
 | **any other button during a run** | also stops the robot |
 | **Bluetooth button** | emergency stop set by the program |
 

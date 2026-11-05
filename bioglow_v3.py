@@ -33,10 +33,10 @@ def blank():
 stage(1)
 
 try:
-    hub.system.set_stop_button(Button.BLUETOOTH)
+    hub.system.set_stop_button(None)
 except Exception:
     try:
-        hub.system.set_stop_button(None)
+        hub.system.set_stop_button(Button.BLUETOOTH)
     except Exception:
         pass
 
@@ -73,7 +73,7 @@ class Aborted(Exception):
 
 
 def check():
-    if hub.buttons.pressed():
+    if Button.CENTER in hub.buttons.pressed():
         raise Aborted()
 
 
@@ -192,7 +192,8 @@ def hold_heading(target):
     try:
         error = wrap180(heading_now() - target)
         if abs(error) > HEADING_TOL:
-            drive.turn(-error, then=Stop.HOLD, wait=True)
+            drive.turn(-error, then=Stop.HOLD, wait=False)
+            wait_drive()
     except Exception:
         pass
 
@@ -262,7 +263,8 @@ def f_turn(x, s=500):
 
 def pivot(angle, moving, held, sign):
     held.hold()
-    moving.run_angle(500, angle * PIVOT_RATIO * sign, then=Stop.HOLD, wait=True)
+    moving.run_angle(500, angle * PIVOT_RATIO * sign, then=Stop.HOLD, wait=False)
+    wait_motor(moving)
     try:
         hub.imu.reset_heading(heading_now())
     except Exception:
