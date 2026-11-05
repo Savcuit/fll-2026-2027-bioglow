@@ -358,81 +358,103 @@ def pivot_left_back(x):
 #  THE PROGRAMS
 # =====================================================================
 
+# =====================================================================
+#  THE PROGRAMS
+#
+#  Every line is a movement, in the order the robot performs it:
+#
+#    fd(distance)              drive forward that many millimetres
+#    bk(distance)              drive backward
+#    left(angle) / right(angle) turn on the spot by that many degrees
+#    a_turn(angle, speed)      swing attachment motor A
+#    f_turn(angle, speed)      swing attachment motor F
+#
+#  Each of fd, bk, left and right accepts two optional arguments:
+#
+#    fd(200, .4, .2)   200 mm
+#                      .4  = speed, 40% of full (900 mm/s)
+#                      .2  = acceleration, 20% of full (2000 mm/s²)
+#
+#  Leave an argument out and it uses the default, exactly as the old code did.
+#
+# =====================================================================
+
 def run_0():
-    """Program 0: calibration only. Use it before a match."""
     calibrate()
 
 
 def run_1():
-    fd(420, .3, .35)          # gentle start away from the wall
-    bk(200, .6)               # brisk reverse
-    right(90, .5, .4)
+    # The first mission: approach, turn, use both attachments, retreat.
+    fd(420, .3)               # out of the start box, gently
+    bk(200, .6)
+    right(90)
     fd(200, .4)
-    left(92, .4)              # 92, not 90: a touch of slack for the gearbox
+    left(92)
     fd(440, .5)
     f_turn(-400)
-    left(40, .3)
-    fd(200, 100, .5)          # 100 means 100 mm/s, taken literally
+    left(40)
+    fd(200, 100)
     f_turn(270)
     bk(190, .5)
-    right(45, .3)
+    right(45)
     a_turn(-220, 100)
-    fd(100, .1, .3)           # slow and soft for the precise approach
+    fd(100, .1)
     a_turn(90, 100)
     fd(170)
     a_turn(-15, 100)
     bk(200)
     a_turn(-50)
-    fd(90, 100, .3)
+    fd(90, 100)
+    #left(5)
     a_turn(90, 100)
     fd(120)
     a_turn(-20, 100)
-    wait(500)                 # let the mission model settle
-    fd(10, .1)
-    bk(935, 900)              # fast retreat
+    wait(500)
+    fd(10)
+    bk(935, 900)
     a_turn(90)
 
 
 def run_2():
-    fd(710, .5, .4)
-    f_turn(170, 200)
-    f_turn(-100, 200)
-    f_turn(100, 500)
-    f_turn(-90, 200)
-    bk(700, .6)
+    fd(710, .5)
+    f_turn(170,s=200)
+    f_turn(-100,s=200)
+    f_turn(100,s=500)
+    f_turn(-90,s=200)
+    bk(-700)
     f_turn(330)
 
 
 def run_3():
     a_turn(400)
-    fd(250, .2, .3)
+    fd(250, .2)
     a_turn(-2000)
 
 
 def run_4():
-    fd(600, .2, .3)
-    right(90, .5, .4)
+    fd(600, .2)
+    right(90)
     fd(275)
     a_turn(290)
-    left(94, .4)
-    fd(120, .3)
+    left(-94)
+    fd(120 , .3)
     a_turn(-60)
-    fd(150, .1, .25)
+    fd(150, .1)
     bk(80)
     fd(100)
     a_turn(-40)
     bk(100, .1)
-    right(45, .3)
+    right(45)
     a_turn(90)
 
 
 def run_5():
-    """Program 5: left empty on purpose — put your next mission here."""
-    fd(300, .3, .3)
-    right(90, .4)
-    fd(300, .3)
-    bk(300, .3)
-    left(90, .4)
+    """
+    Put your next mission here.
+    It must contain at least one line: an empty function is a syntax error,
+    and that alone stops the whole program from loading.
+    """
+    pass
 
 
 programs = [run_0, run_1, run_2, run_3, run_4, run_5]

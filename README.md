@@ -27,6 +27,8 @@ in behaviour — they differ only in commentary.
 
 `bioglow_v3.py` and `bioglow_v3_explained.py` are the successors to everything above. Two changes matter:
 
+- **The missions are unchanged.** Every distance and angle in runs 0–4 is exactly as in the file sent to
+  me; the only timing change is the small heading correction after each move.
 - **Per-command acceleration.** `fd(200, .2, .1)` — distance, speed, acceleration. A value below 1 is a
   share of full (so `.1` is ten percent of 2000 mm/s²); above 1 it is literal.
 - **Gyro correction after every move.** Each straight records the heading it started on and nudges back

@@ -292,74 +292,72 @@ def run_0():
 
 
 def run_1():
-    fd(420, .3, .35)
+    fd(420, .3)
     bk(200, .6)
-    right(90, .5, .4)
+    right(90)
     fd(200, .4)
-    left(92, .4)
+    left(92)
     fd(440, .5)
     f_turn(-400)
-    left(40, .3)
-    fd(200, 100, .5)
+    left(40)
+    fd(200, 100)
     f_turn(270)
     bk(190, .5)
-    right(45, .3)
+    right(45)
     a_turn(-220, 100)
-    fd(100, .1, .3)
+    fd(100, .1)
     a_turn(90, 100)
     fd(170)
     a_turn(-15, 100)
     bk(200)
     a_turn(-50)
-    fd(90, 100, .3)
+    fd(90, 100)
+    #left(5)
     a_turn(90, 100)
     fd(120)
     a_turn(-20, 100)
     wait(500)
-    fd(10, .1)
+    fd(10)
     bk(935, 900)
     a_turn(90)
 
 
 def run_2():
-    fd(710, .5, .4)
-    f_turn(170, 200)
-    f_turn(-100, 200)
-    f_turn(100, 500)
-    f_turn(-90, 200)
-    bk(700, .6)
+    fd(710, .5)
+    f_turn(170,s=200)
+    f_turn(-100,s=200)
+    f_turn(100,s=500)
+    f_turn(-90,s=200)
+    bk(-700)
     f_turn(330)
 
 
 def run_3():
     a_turn(400)
-    fd(250, .2, .3)
+    fd(250, .2)
     a_turn(-2000)
 
 
 def run_4():
-    fd(600, .2, .3)
-    right(90, .5, .4)
+    fd(600, .2)
+    right(90)
     fd(275)
     a_turn(290)
-    left(94, .4)
-    fd(120, .3)
+    left(-94)
+    fd(120 , .3)
     a_turn(-60)
-    fd(150, .1, .25)
+    fd(150, .1)
     bk(80)
     fd(100)
     a_turn(-40)
     bk(100, .1)
-    right(45, .3)
+    right(45)
     a_turn(90)
 
 
 def run_5():
-    fd(300, .3, .3)
-    right(90, .4)
-    fd(300, .3)
-    bk(300, .3)
-    left(90, .4)
+    """Put your next mission here; an empty function is a syntax error in Python."""
+    pass
 
 
 programs = [run_0, run_1, run_2, run_3, run_4, run_5]
