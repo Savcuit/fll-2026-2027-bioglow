@@ -1,7 +1,13 @@
 # FLL 2026–2027 BIOGLOW — robot code
 
-One file: **`main.py`** — the full framework, with the gyroscope, fine angle and distance
-correction, PID pivots, stall detection and voltage check, carrying the current mission commands.
+Two files, the same missions, the same controls.
+
+| File | What it is | Lines |
+|---|---|---|
+| **`main.py`** | The full framework: gyro steering, PID angle and distance correction, PID pivots, stall detection, voltage check, automatic calibration. | 637 |
+| **`simple.py`** | The same missions in a much smaller program: gyro steering and a 0.6° heading nudge, no PID, no calibration pass. Use it when you want to read or edit the code quickly, or when a run only needs to be roughly right. | 351 |
+
+Both are driven identically: LEFT/RIGHT choose, CENTER runs, CENTER again stops.
 
 ## Controls
 
@@ -24,6 +30,8 @@ The firmware's own stop button is switched off, so CENTER belongs entirely to th
 | **3** | Short positioning run, 3 steps |
 | **4** | Mission run, 14 steps |
 | **5** | Empty — put your next mission here. A function with no body is a syntax error, so it contains `pass`. |
+
+Run **0** matters in `main.py` (it measures the robot); in `simple.py` it only zeroes the gyroscope.
 
 ## Calling a movement
 
