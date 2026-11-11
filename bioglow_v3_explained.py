@@ -5,7 +5,7 @@
 #  HOW TO USE
 #    LEFT / RIGHT on the hub  = choose a program (0 to 5 shown on screen)
 #    CENTER                   = run the program shown
-#    any other button         = stop the robot immediately
+#    CENTER again             = stop the robot and go back to the menu
 #    0 is always "calibrate"; the others are your mission runs.
 #
 #  HOW THE NUMBERS IN THE RUNS WORK
@@ -17,6 +17,12 @@
 #             acceleration, above 1 it is literal.  Small = gentle start,
 #             big = snappy start.
 #    bk(x) and left(x) / right(x) take the same three arguments.
+#
+#  THE ONE CHECK
+#    Everything that waits — every straight, every turn, every attachment
+#    swing — goes through check().  That single function watches the button,
+#    the clock and the motors, so the robot can always be stopped and can
+#    never hang waiting for something that will not finish.
 # =====================================================================
 
 from pybricks.hubs import PrimeHub
@@ -29,18 +35,19 @@ from pybricks.tools import StopWatch, wait
 hub = PrimeHub(top_side=Axis.Z, front_side=Axis.X)
 
 # ---- robot measurements -------------------------------------------------
-WHEEL = 62.4                     # wheel diameter, millimetres
-TRACK = 120.0                    # distance between the two wheels, millimetres
+WHEEL = 62.4                       # wheel diameter, millimetres
+TRACK = 120.0                      # distance between the two wheels, millimetres
 PIVOT_RATIO = (2 * TRACK) / WHEEL  # wheel degrees needed per degree of pivot
 
 # ---- driving defaults ---------------------------------------------------
-BASE_SPEED = 900.0               # full speed, mm/s
-BASE_ACCEL = 2000.0              # full acceleration, mm/s per second
-TURN_RATE = 790.0                # degrees per second while turning
-GYRO = True                      # let the gyroscope steer straight lines
-CORRECT = True                   # nudge back onto the compass heading after each move
-HEADING_TOL = 0.6                # degrees of error worth correcting
-MOVE_TIMEOUT = 30000             # safety: never wait more than 30 s for one move
+BASE_SPEED = 900.0        # full speed, mm/s
+BASE_ACCEL = 2000.0       # full acceleration, mm/s per second
+TURN_RATE = 790.0         # degrees per second while turning
+GYRO = True               # let the gyroscope steer straight lines
+CORRECT = True            # nudge back onto the compass heading after each move
+HEADING_TOL = 0.6         # degrees of error worth correcting
+MOVE_TIMEOUT = 30000      # safety: never wait more than 30 s for one move
+IMU_TIMEOUT = 5000        # safety: never wait more than 5 s for the gyroscope
 
 
 def stage(n):
@@ -51,17 +58,10 @@ def stage(n):
         pass
 
 
-def blank():
-    """A do-nothing function, kept so an empty program is still legal."""
-    pass
-
-
 stage(1)
 
-# The factory stop button is CENTER and we want CENTER for ourselves:
-# a first press runs the chosen program, a second press stops it.
-# So the firmware stop is switched off entirely, and our own check()
-# below watches CENTER during every move instead.
+# The factory stop button is CENTER and we want CENTER for ourselves, so the
+# firmware stop is switched off and our own check() watches CENTER instead.
 try:
     hub.system.set_stop_button(None)
 except Exception:
@@ -90,6 +90,60 @@ except Exception:
     tool_f = None
 
 
+# =====================================================================
+#  THE ONE CHECK — buttons, timeouts and waiting, all in one place
+# =====================================================================
+
+class Aborted(Exception):
+    """Raised when CENTER is pressed during a run."""
+    pass
+
+
+def check(thing=None, timeout=MOVE_TIMEOUT):
+    """
+    The only checking function in the program.  Call it with nothing to test
+    the button, or with a motor to wait for that motor.
+
+      check()          → returns True, or raises Aborted if CENTER is held
+      check(drive)     → waits until the drive base has finished moving
+      check(tool_a)    → waits until that attachment motor has finished
+
+    With a motor it also gives up after `timeout` milliseconds, stopping the
+    motor instead of hanging forever, and returns False in that case.
+    """
+    if thing is None:
+        if Button.CENTER in hub.buttons.pressed():
+            raise Aborted()
+        return True
+
+    watch = StopWatch()
+    while not thing.done():
+        if Button.CENTER in hub.buttons.pressed():
+            raise Aborted()
+        if watch.time() > timeout:
+            thing.stop()
+            return False
+        wait(5)
+    return True
+
+
+def steady():
+    """
+    Wait for the gyroscope to settle, then pause for a moment so the reading
+    is calm before it is used.  If the hub has no IMU, this returns at once.
+    """
+    watch = StopWatch()
+    ready = False
+    while not ready and watch.time() < IMU_TIMEOUT:
+        try:
+            ready = hub.imu.ready()
+        except Exception:
+            ready = True          # no gyroscope: nothing to wait for
+        if not ready:
+            wait(10)
+    wait(300)
+
+
 def stop():
     """Stop everything, now."""
     drive.stop()
@@ -99,20 +153,6 @@ def stop():
         tool_a.stop()
     if tool_f:
         tool_f.stop()
-
-
-class Aborted(Exception):
-    """Raised when the driver presses a button during a run."""
-    pass
-
-
-def check():
-    """
-    Every waiting loop calls this. Pressing CENTER while a program runs stops
-    the robot and returns to the menu; other buttons are ignored.
-    """
-    if Button.CENTER in hub.buttons.pressed():
-        raise Aborted()
 
 
 def wait_release():
@@ -131,21 +171,9 @@ def wait_press():
     return pressed
 
 
-def imu_ready():
-    """True once the gyroscope has settled. Pretend ready if there is no IMU."""
-    try:
-        return hub.imu.ready()
-    except Exception:
-        return True
-
-
-def settle_imu():
-    """Give the gyroscope up to five seconds to settle, then a short pause."""
-    watch = StopWatch()
-    while not imu_ready() and watch.time() < 5000:
-        wait(10)
-    wait(300)
-
+# =====================================================================
+#  STEERING HELPERS
+# =====================================================================
 
 def heading_now():
     """The direction the robot faces, in degrees. 0 means "no error here"."""
@@ -164,28 +192,26 @@ def wrap180(value):
     return value
 
 
-def speed_of(s):
-    """Turn the short speed argument into mm/s."""
-    if s is None:
-        return BASE_SPEED
-    if s <= 1:
-        return BASE_SPEED * s
-    return s
-
-
-def accel_of(a):
-    """Turn the short acceleration argument into mm/s²."""
-    if a is None:
-        return BASE_ACCEL
-    if a <= 1:
-        return BASE_ACCEL * a
-    return a
-
-
 def tune(s, a):
-    """Apply this command's own speed and acceleration before it starts."""
-    speed = speed_of(s)
-    accel = accel_of(a)
+    """
+    Apply this command's own speed and acceleration before it starts.
+    Below 1 the number is a share of full; above 1 it is literal.  None
+    means "use the default", which is how the old code behaved.
+    """
+    if s is None:
+        speed = BASE_SPEED
+    elif s <= 1:
+        speed = BASE_SPEED * s
+    else:
+        speed = s
+
+    if a is None:
+        accel = BASE_ACCEL
+    elif a <= 1:
+        accel = BASE_ACCEL * a
+    else:
+        accel = a
+
     drive.settings(speed, accel, TURN_RATE, accel)
 
 
@@ -193,7 +219,7 @@ def reset():
     """Zero the gyroscope and the wheel counters before a run."""
     stop()
     wait(300)
-    settle_imu()
+    steady()
     try:
         hub.imu.reset_heading(0)
     except Exception:
@@ -214,33 +240,10 @@ def start():
     hub.light.on(Color.GREEN)
 
 
-def wait_drive():
-    """Wait for a drive move to finish, watching for a button and a timeout."""
-    watch = StopWatch()
-    while not drive.done():
-        check()
-        if watch.time() > MOVE_TIMEOUT:
-            drive.stop()
-            return False
-        wait(5)
-    return True
-
-
-def wait_motor(motor):
-    """The same waiting loop for an attachment motor."""
-    watch = StopWatch()
-    while not motor.done():
-        check()
-        if watch.time() > MOVE_TIMEOUT:
-            motor.stop()
-            return
-        wait(5)
-
-
 def hold_heading(target):
     """
-    After a straight line, the robot may be a degree or two off the compass.
-    This nudges it back, which is what keeps long runs accurate.
+    After a straight line the robot may be a degree or two off the compass.
+    This nudges it back, which is what keeps the long runs accurate.
     """
     if not CORRECT:
         return
@@ -248,17 +251,21 @@ def hold_heading(target):
         error = wrap180(heading_now() - target)
         if abs(error) > HEADING_TOL:
             drive.turn(-error, then=Stop.HOLD, wait=False)
-            wait_drive()
+            check(drive)
     except Exception:
         pass
 
+
+# =====================================================================
+#  MOVEMENTS — each one drives, then waits through check()
+# =====================================================================
 
 def fd(x, s=None, a=None):
     """Drive forward x millimetres at speed s and acceleration a."""
     target = heading_now()
     tune(s, a)
     drive.straight(abs(x), then=Stop.HOLD, wait=False)
-    wait_drive()
+    check(drive)
     hold_heading(target)
 
 
@@ -267,7 +274,7 @@ def bk(x, s=None, a=None):
     target = heading_now()
     tune(s, a)
     drive.straight(-abs(x), then=Stop.HOLD, wait=False)
-    wait_drive()
+    check(drive)
     hold_heading(target)
 
 
@@ -276,7 +283,7 @@ def right(x, s=None, a=None):
     tune(s, a)
     target = wrap180(heading_now() + x)
     drive.turn(abs(x), then=Stop.HOLD, wait=False)
-    wait_drive()
+    check(drive)
     hold_heading(target)
 
 
@@ -285,7 +292,7 @@ def left(x, s=None, a=None):
     tune(s, a)
     target = wrap180(heading_now() - x)
     drive.turn(-abs(x), then=Stop.HOLD, wait=False)
-    wait_drive()
+    check(drive)
     hold_heading(target)
 
 
@@ -294,7 +301,7 @@ def calibrate():
     hub.light.on(Color.YELLOW)
     stop()
     wait(1000)
-    settle_imu()
+    steady()
     try:
         hub.imu.reset_heading(0)
     except Exception:
@@ -313,14 +320,14 @@ def a_turn(x, s=500):
     """Turn attachment motor A by x degrees."""
     if tool_a:
         tool_a.run_angle(s, x, then=Stop.HOLD, wait=False)
-        wait_motor(tool_a)
+        check(tool_a)
 
 
 def f_turn(x, s=500):
     """Turn attachment motor F by x degrees."""
     if tool_f:
         tool_f.run_angle(s, x, then=Stop.HOLD, wait=False)
-        wait_motor(tool_f)
+        check(tool_f)
 
 
 def pivot(angle, moving, held, sign):
@@ -331,7 +338,7 @@ def pivot(angle, moving, held, sign):
     """
     held.hold()
     moving.run_angle(500, angle * PIVOT_RATIO * sign, then=Stop.HOLD, wait=False)
-    wait_motor(moving)
+    check(moving)
     try:
         hub.imu.reset_heading(heading_now())
     except Exception:
@@ -345,18 +352,6 @@ def pivot_right(x):
 def pivot_left(x):
     pivot(x, right_motor, left_motor, -1)
 
-
-def pivot_right_back(x):
-    pivot(x, right_motor, left_motor, -1)
-
-
-def pivot_left_back(x):
-    pivot(x, left_motor, right_motor, 1)
-
-
-# =====================================================================
-#  THE PROGRAMS
-# =====================================================================
 
 # =====================================================================
 #  THE PROGRAMS
@@ -372,12 +367,9 @@ def pivot_left_back(x):
 #  Each of fd, bk, left and right accepts two optional arguments:
 #
 #    fd(200, .4, .2)   200 mm, 40% speed, 20% acceleration
-#    fd(200, speed=.4, accel=.2)   the same thing in the old keyword style
-#                      .4  = speed, 40% of full (900 mm/s)
-#                      .2  = acceleration, 20% of full (2000 mm/s²)
+#    fd(200, s=.4, a=.2)           the same thing, shortened
 #
 #  Leave an argument out and it uses the default, exactly as the old code did.
-#
 # =====================================================================
 
 def run_0():
@@ -418,10 +410,10 @@ def run_1():
 
 def run_2():
     fd(710, .5)
-    f_turn(170,s=200)
-    f_turn(-100,s=200)
-    f_turn(100,s=500)
-    f_turn(-90,s=200)
+    f_turn(170, s=200)
+    f_turn(-100, s=200)
+    f_turn(100, s=500)
+    f_turn(-90, s=200)
     bk(-700)
     f_turn(330)
 
@@ -438,7 +430,7 @@ def run_4():
     fd(275)
     a_turn(290)
     left(-94)
-    fd(120 , .3)
+    fd(120, .3)
     a_turn(-60)
     fd(150, .1)
     bk(80)
