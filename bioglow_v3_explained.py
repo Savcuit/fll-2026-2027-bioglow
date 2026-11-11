@@ -117,14 +117,14 @@ def check(thing=None, timeout=MOVE_TIMEOUT):
         return True
 
     watch = StopWatch()
-    while not thing.done():
+    while not thing.done():                     # still moving
         if Button.CENTER in hub.buttons.pressed():
-            raise Aborted()
+            raise Aborted()                     # the driver pressed stop
         if watch.time() > timeout:
-            thing.stop()
+            thing.stop()                        # something jammed: stop it
             return False
-        wait(5)
-    return True
+        wait(5)                                 # check again in 5 ms
+    return True                                 # the move finished on its own
 
 
 def steady():
@@ -138,10 +138,10 @@ def steady():
         try:
             ready = hub.imu.ready()
         except Exception:
-            ready = True          # no gyroscope: nothing to wait for
+            ready = True          # no gyroscope fitted: nothing to wait for
         if not ready:
-            wait(10)
-    wait(300)
+            wait(10)              # the gyroscope is still settling
+    wait(300)                     # a calm moment before the reading is used
 
 
 def stop():
@@ -198,6 +198,7 @@ def tune(s, a):
     Below 1 the number is a share of full; above 1 it is literal.  None
     means "use the default", which is how the old code behaved.
     """
+    # speed: nothing given = full; .5 = half of full; 300 = 300 mm/s exactly
     if s is None:
         speed = BASE_SPEED
     elif s <= 1:
@@ -205,6 +206,7 @@ def tune(s, a):
     else:
         speed = s
 
+    # acceleration works the same way: a share of full, or a literal number
     if a is None:
         accel = BASE_ACCEL
     elif a <= 1:
@@ -248,8 +250,8 @@ def hold_heading(target):
     if not CORRECT:
         return
     try:
-        error = wrap180(heading_now() - target)
-        if abs(error) > HEADING_TOL:
+        error = wrap180(heading_now() - target)   # how far off the compass we are
+        if abs(error) > HEADING_TOL:              # only bother if it is noticeable
             drive.turn(-error, then=Stop.HOLD, wait=False)
             check(drive)
     except Exception:
@@ -373,72 +375,72 @@ def pivot_left(x):
 # =====================================================================
 
 def run_0():
-    calibrate()
+    calibrate()   # zero the gyroscope
 
 
 def run_1():
     # The first mission: approach, turn, use both attachments, retreat.
-    fd(420, .3)               # out of the start box, gently
-    bk(200, .6)
-    right(90)
-    fd(200, .4)
-    left(92)
-    fd(440, .5)
-    f_turn(-400)
-    left(40)
-    fd(200, 100)
-    f_turn(270)
-    bk(190, .5)
-    right(45)
-    a_turn(-220, 100)
-    fd(100, .1)
-    a_turn(90, 100)
-    fd(170)
-    a_turn(-15, 100)
-    bk(200)
-    a_turn(-50)
-    fd(90, 100)
+    fd(420, .3)              # out of the start box, gently · 420 mm forward, speed 30%
+    bk(200, .6)              # 200 mm back, speed 60%
+    right(90)                # turn right 90°
+    fd(200, .4)              # 200 mm forward, speed 40%
+    left(92)                 # turn left 92°
+    fd(440, .5)              # 440 mm forward, speed 50%
+    f_turn(-400)             # attachment F, -400°
+    left(40)                 # turn left 40°
+    fd(200, 100)             # 200 mm forward, speed 100 mm/s
+    f_turn(270)              # attachment F, 270°
+    bk(190, .5)              # 190 mm back, speed 50%
+    right(45)                # turn right 45°
+    a_turn(-220, 100)        # attachment A, -220° at 100
+    fd(100, .1)              # 100 mm forward, speed 10%
+    a_turn(90, 100)          # attachment A, 90° at 100
+    fd(170)                  # 170 mm forward
+    a_turn(-15, 100)         # attachment A, -15° at 100
+    bk(200)                  # 200 mm back
+    a_turn(-50)              # attachment A, -50°
+    fd(90, 100)              # 90 mm forward, speed 100 mm/s
     #left(5)
-    a_turn(90, 100)
-    fd(120)
-    a_turn(-20, 100)
-    wait(500)
-    fd(10)
-    bk(935, 900)
-    a_turn(90)
+    a_turn(90, 100)          # attachment A, 90° at 100
+    fd(120)                  # 120 mm forward
+    a_turn(-20, 100)         # attachment A, -20° at 100
+    wait(500)                # pause 500 ms
+    fd(10)                   # 10 mm forward
+    bk(935, 900)             # 935 mm back, speed 900 mm/s
+    a_turn(90)               # attachment A, 90°
 
 
 def run_2():
-    fd(710, .5)
-    f_turn(170, s=200)
-    f_turn(-100, s=200)
-    f_turn(100, s=500)
-    f_turn(-90, s=200)
-    bk(-700)
-    f_turn(330)
+    fd(710, .5)              # 710 mm forward, speed 50%
+    f_turn(170, s=200)       # attachment F, 170° at s=200
+    f_turn(-100, s=200)      # attachment F, -100° at s=200
+    f_turn(100, s=500)       # attachment F, 100° at s=500
+    f_turn(-90, s=200)       # attachment F, -90° at s=200
+    bk(-700)                 # -700 mm back
+    f_turn(330)              # attachment F, 330°
 
 
 def run_3():
-    a_turn(400)
-    fd(250, .2)
-    a_turn(-2000)
+    a_turn(400)              # attachment A, 400°
+    fd(250, .2)              # 250 mm forward, speed 20%
+    a_turn(-2000)            # attachment A, -2000°
 
 
 def run_4():
-    fd(600, .2)
-    right(90)
-    fd(275)
-    a_turn(290)
-    left(-94)
-    fd(120, .3)
-    a_turn(-60)
-    fd(150, .1)
-    bk(80)
-    fd(100)
-    a_turn(-40)
-    bk(100, .1)
-    right(45)
-    a_turn(90)
+    fd(600, .2)              # 600 mm forward, speed 20%
+    right(90)                # turn right 90°
+    fd(275)                  # 275 mm forward
+    a_turn(290)              # attachment A, 290°
+    left(-94)                # turn left -94°
+    fd(120, .3)              # 120 mm forward, speed 30%
+    a_turn(-60)              # attachment A, -60°
+    fd(150, .1)              # 150 mm forward, speed 10%
+    bk(80)                   # 80 mm back
+    fd(100)                  # 100 mm forward
+    a_turn(-40)              # attachment A, -40°
+    bk(100, .1)              # 100 mm back, speed 10%
+    right(45)                # turn right 45°
+    a_turn(90)               # attachment A, 90°
 
 
 def run_5():
